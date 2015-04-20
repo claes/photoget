@@ -16,15 +16,31 @@ download_all() {
 	DOWNLOAD_DIR="$DOWNLOAD_HOME/$1"
     fi
     mkdir -p "$DOWNLOAD_DIR"
+    mkdir -p "$DOWNLOAD_DIR/raw"
+    mkdir -p "$DOWNLOAD_DIR/rawthumb"
+    mkdir -p "$DOWNLOAD_DIR/jpg"
+
     export "DOWNLOAD_DIR"
     echo $DOWNLOAD_DIR
-    gphoto2 --get-all-files --hook-script $SCRIPT_DIR/download.sh
-    gphoto2 --get-all-raw-data --hook-script $SCRIPT_DIR/download.sh
+    gphoto2 --get-all-files --hook-script $SCRIPT_DIR/photoget.sh
+    gphoto2 --get-all-raw-data --hook-script $SCRIPT_DIR/photoget.sh
+    gphoto2 --set-config datetime=now
     rm -rf "$TMP_DIR"
 }
 
 hook() {
-    mv -n "$ARGUMENT" "$DOWNLOAD_DIR"
+    case "$ARGUMENT" in 
+        *.cr2|*.CR2) 
+		mv -n "$ARGUMENT" "$DOWNLOAD_DIR/raw" 
+		dcraw -c -e "$DOWNLOAD_DIR/raw/$ARGUMENT" > \
+			"$DOWNLOAD_DIR/rawthumb/$ARGUMENT".jpg	
+		;;
+        *.jpg|*.JPG) 
+		mv -n "$ARGUMENT" "$DOWNLOAD_DIR/jpg" 
+		;;
+        *) 
+		mv -n "$ARGUMENT" "$DOWNLOAD_DIR"
+    esac 
 } 
 
 # Find location of this script
